@@ -1,8 +1,22 @@
+var oscCount = 0;
+
 var Leaf = function(position, colour) {
 
   this.position = position;
   this.colour = colour;
   this.size = random(5, 10);
+
+  this.freq = position.x + position.y - 500;
+
+  if (random(1) > 0.98) {
+    this.osc = new p5.Oscillator();
+    this.osc.setType('sine');
+    this.osc.freq(this.freq);
+    this.osc.amp(0);
+    this.osc.start();
+    this.osc.amp(0.01, 0.2);
+  }
+
 }
 
 Leaf.prototype = {
@@ -10,20 +24,26 @@ Leaf.prototype = {
     noStroke();
     fill(this.colour);
     ellipse(this.position.x, this.position.y, this.size, random(this.size));
+    if (this.osc && random(1) > 0.9) {
+      this.osc.freq(this.freq += noise(random(-100, 100)));
+    }
   }
 }
 
 // ------------------------------------------------------------------
 
-var Branch = function(start, end) {
+var Branch = function(start, end, thickness) {
 
   this.start = start;
   this.end = end;
   this.finished = false;
+  this.thickness = thickness;
 }
 
 Branch.prototype = {
   draw: function() {
+    strokeWeight(this.thickness);
+    stroke(100, 200);
     line(this.start.x, this.start.y, this.end.x, this.end.y);
   }
 }
@@ -40,7 +60,7 @@ var Tree = function(options) {
 
   var end = createVector(options.root.x, options.root.y - options.length);
 
-  this.branches.push(new Branch(options.root, end));
+  this.branches.push(new Branch(options.root, end, 1));
 
   var freq = 200;
 
@@ -50,7 +70,7 @@ var Tree = function(options) {
   for (var i = 0; i < options.levels; i++) {
     setTimeout(function(level) {
       this.createBranches(level);
-      this.createOscillator(freq);
+      // this.createOscillator(freq);
       freq *= random(1, 1.5);
     }.bind(this, i), time);
     time += delay;
@@ -90,8 +110,8 @@ Tree.prototype = {
           this.leaves.push(l);
           this.leaves.push(r);
         } else {
-          var l = new Branch(this.branches[i].end, newEndL);
-          var r = new Branch(this.branches[i].end, newEndR);
+          var l = new Branch(this.branches[i].end, newEndL, 1);
+          var r = new Branch(this.branches[i].end, newEndR, 1);
           this.branches.push(l);
           this.branches.push(r);
         }
